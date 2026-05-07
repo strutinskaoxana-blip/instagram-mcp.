@@ -90,6 +90,6 @@ app.post("/messages", async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
+app.listen(process.env.PORT || 3000, () => {
   console.log("Serveur MCP Instagram prêt sur le port 3000 !");
 });
