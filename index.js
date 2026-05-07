@@ -51,13 +51,13 @@ const transports = new Map();
 app.get("/sse", async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const server = createServer();
-  const transport = new SSEServerTransport("/messages", res);
+  const transport = new SSEServerTransport("/sse", res);
   transports.set(transport.sessionId, transport);
   res.on("close", () => transports.delete(transport.sessionId));
   await server.connect(transport);
 });
 
-app.post("/messages", async (req, res) => {
+app.post("/sse", async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const sessionId = req.query.sessionId;
   const transport = transports.get(sessionId);
