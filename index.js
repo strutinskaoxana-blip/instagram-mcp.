@@ -10,42 +10,47 @@ const INSTAGRAM_USER_ID = "2611356802599164";
 const app = express();
 app.use(express.json());
 
-const server = new Server(
-  { name: "instagram-mcp", version: "1.0.0" },
-  { capabilities: { tools: {} } }
-);
+function createServer() {
+  const server = new Server(
+    { name: "instagram-mcp", version: "1.0.0" },
+    { capabilities: { tools: {} } }
+  );
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
-    {
-      name: "get_profile",
-      description: "Obtenir les infos du profil Instagram",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "get_posts",
-      description: "Obtenir les derniers posts Instagram",
-      inputSchema: { type: "object", properties: {} },
-    },
-  ],
-}));
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: [
+      {
+        name: "get_profile",
+        description: "Obtenir les infos du profil Instagram",
+        inputSchema: { type: "object", properties: {} },
+      },
+      {
+        name: "get_posts",
+        description: "Obtenir les derniers posts Instagram",
+        inputSchema: { type: "object", properties: {} },
+      },
+    ],
+  }));
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  if (request.params.name === "get_profile") {
-    const res = await axios.get(`https://graph.instagram.com/v21.0/me?fields=id,name,biography,followers_count,media_count&access_token=${INSTAGRAM_TOKEN}`);
-    return { content: [{ type: "text", text: JSON.stringify(res.data, null, 2) }] };
-  }
-  if (request.params.name === "get_posts") {
-    const res = await axios.get(`https://graph.instagram.com/v21.0/${INSTAGRAM_USER_ID}/media?fields=id,caption,media_type,timestamp,like_count,comments_count&access_token=${INSTAGRAM_TOKEN}`);
-    return { content: [{ type: "text", text: JSON.stringify(res.data, null, 2) }] };
-  }
-  return { content: [{ type: "text", text: "Outil non trouvé" }] };
-});
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    if (request.params.name === "get_profile") {
+      const res = await axios.get(`https://graph.instagram.com/v21.0/me?fields=id,name,biography,followers_count,media_count&access_token=${INSTAGRAM_TOKEN}`);
+      return { content: [{ type: "text", text: JSON.stringify(res.data, null, 2) }] };
+    }
+    if (request.params.name === "get_posts") {
+      const res = await axios.get(`https://graph.instagram.com/v21.0/${INSTAGRAM_USER_ID}/media?fields=id,caption,media_type,timestamp,like_count,comments_count&access_token=${INSTAGRAM_TOKEN}`);
+      return { content: [{ type: "text", text: JSON.stringify(res.data, null, 2) }] };
+    }
+    return { content: [{ type: "text", text: "Outil non trouvé" }] };
+  });
+
+  return server;
+}
 
 const transports = new Map();
 
 app.get("/sse", async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
+  const server = createServer();
   const transport = new SSEServerTransport("/messages", res);
   transports.set(transport.sessionId, transport);
   res.on("close", () => transports.delete(transport.sessionId));
